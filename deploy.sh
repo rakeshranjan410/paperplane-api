@@ -100,7 +100,7 @@ sleep 2
 
 # Start the server with PM2
 print_info "Starting server with PM2 in production mode..."
-pm2 start ecosystem.config.js --env production
+pm2 start ecosystem.config.cjs --env production
 print_success "Server started"
 
 # Save PM2 configuration

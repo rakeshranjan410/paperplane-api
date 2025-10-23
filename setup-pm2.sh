@@ -113,9 +113,9 @@ else
     print_success "Logs directory already exists"
 fi
 
-# Check if ecosystem.config.js exists
-if [ ! -f "ecosystem.config.js" ]; then
-    print_error "ecosystem.config.js not found!"
+# Check if ecosystem.config.cjs exists
+if [ ! -f "ecosystem.config.cjs" ]; then
+    print_error "ecosystem.config.cjs not found!"
     exit 1
 fi
 
@@ -139,11 +139,11 @@ else
 
     if [ "$env_choice" = "1" ]; then
         print_info "Starting app in PRODUCTION mode..."
-        pm2 start ecosystem.config.js --env production
+        pm2 start ecosystem.config.cjs --env production
         print_success "App started in production mode"
     elif [ "$env_choice" = "2" ]; then
         print_info "Starting app in DEVELOPMENT mode..."
-        pm2 start ecosystem.config.js --env development
+        pm2 start ecosystem.config.cjs --env development
         print_success "App started in development mode"
     else
         print_error "Invalid choice. Exiting."

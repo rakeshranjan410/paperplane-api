@@ -115,7 +115,7 @@ mkdir -p logs
 npm run pm2:start
 
 # OR directly with pm2
-pm2 start ecosystem.config.js --env production
+pm2 start ecosystem.config.cjs --env production
 ```
 
 ## Step 9: Configure EC2 Security Group

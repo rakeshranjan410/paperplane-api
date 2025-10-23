@@ -229,7 +229,7 @@ markdown-qa-api/
 ├── .env.example               # Environment variables template
 ├── .gitignore                 # Git ignore rules
 ├── package.json               # Dependencies and scripts
-├── ecosystem.config.js        # PM2 configuration
+├── ecosystem.config.cjs       # PM2 configuration
 ├── deploy.sh                  # Automated deployment script
 ├── setup-pm2.sh               # PM2 initial setup script
 ├── EC2_DEPLOYMENT.md          # EC2 deployment guide
@@ -376,6 +376,8 @@ CMD ["npm", "start"]
 ### PM2 (Process Manager)
 
 **See [EC2_DEPLOYMENT.md](./EC2_DEPLOYMENT.md) for complete deployment guide.**
+
+> **Note:** The ecosystem file uses `.cjs` extension because this project uses ES modules (`"type": "module"`). PM2 ecosystem files must be in CommonJS format.
 
 ```bash
 # Install PM2 globally

@@ -14,8 +14,8 @@ npm run pm2:start
 npm run pm2:dev
 
 # Direct PM2 commands
-pm2 start ecosystem.config.js --env production
-pm2 start ecosystem.config.js --env development
+pm2 start ecosystem.config.cjs --env production
+pm2 start ecosystem.config.cjs --env development
 ```
 
 ### Viewing Status & Monitoring
@@ -156,6 +156,11 @@ pm2 set pm2-logrotate:max_size 10M
 pm2 set pm2-logrotate:retain 7
 pm2 set pm2-logrotate:compress true
 ```
+
+## Notes
+
+- The ecosystem file uses `.cjs` extension because the project uses ES modules (`"type": "module"` in package.json)
+- PM2 ecosystem files must be CommonJS format
 
 ## Resources
 
