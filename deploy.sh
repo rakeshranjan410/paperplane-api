@@ -4,14 +4,27 @@
 # Paperplane API - Deployment Script
 # 
 # This script pulls the latest changes from main branch, reinstalls 
-# dependencies, kills all PM2 processes, and restarts the server.
+# dependencies, kills all PM2 processes, restarts the server, and configures Nginx + SSL.
 #
 # Usage: 
-#   chmod +x deploy.sh
-#   ./deploy.sh
+#   ./deploy.sh                                    # Self-signed SSL
+#   ./deploy.sh api.yourdomain.com your@email.com  # Let's Encrypt SSL
+#   ./deploy.sh --skip-nginx                       # Skip Nginx setup
 ###############################################################################
 
 set -e  # Exit on any error
+
+# Parse arguments
+DOMAIN=""
+EMAIL=""
+SKIP_NGINX=false
+
+if [ "$1" = "--skip-nginx" ]; then
+    SKIP_NGINX=true
+elif [ -n "$1" ]; then
+    DOMAIN="$1"
+    EMAIL="${2:-}"
+fi
 
 # Colors for output
 RED='\033[0;31m'
@@ -140,15 +153,96 @@ if [ "$STASHED" = true ]; then
     print_success "Stashed changes restored"
 fi
 
+# Nginx + SSL Setup
+if [ "$SKIP_NGINX" = false ]; then
+    echo ""
+    echo "=========================================="
+    print_info "Setting up Nginx + SSL..."
+    echo "=========================================="
+    echo ""
+    
+    # Check if nginx directory exists
+    if [ ! -d "nginx" ]; then
+        print_warning "Nginx directory not found. Creating..."
+        mkdir -p nginx
+    fi
+    
+    # Check if setup script exists
+    if [ -f "nginx/setup-nginx.sh" ]; then
+        chmod +x nginx/setup-nginx.sh
+        
+        # Check if running as root
+        if [ "$EUID" -eq 0 ]; then
+            # Already root, run directly
+            if [ -n "$DOMAIN" ] && [ -n "$EMAIL" ]; then
+                print_info "Setting up with Let's Encrypt for domain: $DOMAIN"
+                cd nginx && ./setup-nginx.sh "$DOMAIN" "$EMAIL" && cd ..
+            else
+                print_info "Setting up with self-signed certificate"
+                cd nginx && ./setup-nginx.sh && cd ..
+            fi
+            print_success "Nginx + SSL configured"
+        else
+            # Not root, need sudo
+            print_warning "Nginx setup requires sudo privileges"
+            if [ -n "$DOMAIN" ] && [ -n "$EMAIL" ]; then
+                print_info "Setting up with Let's Encrypt for domain: $DOMAIN"
+                sudo bash -c "cd $(pwd)/nginx && ./setup-nginx.sh \"$DOMAIN\" \"$EMAIL\""
+            else
+                print_info "Setting up with self-signed certificate"
+                sudo bash -c "cd $(pwd)/nginx && ./setup-nginx.sh"
+            fi
+            print_success "Nginx + SSL configured"
+        fi
+        
+        # Reload nginx to pick up any config changes
+        if command -v nginx &> /dev/null; then
+            print_info "Reloading Nginx..."
+            sudo systemctl reload nginx 2>/dev/null || true
+        fi
+    else
+        print_warning "Nginx setup script not found at nginx/setup-nginx.sh"
+        print_info "Run manually: cd nginx && sudo ./setup-nginx.sh"
+    fi
+fi
+
 echo ""
 echo "=========================================="
 print_success "Deployment Complete! 🚀"
 echo "=========================================="
 echo ""
-print_info "Your API is now running with the latest changes."
+
+# Get public IP for display
+PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || echo "YOUR_IP")
+
+if [ "$SKIP_NGINX" = false ]; then
+    print_info "Your API is now accessible at:"
+    if [ -n "$DOMAIN" ]; then
+        echo "  HTTPS: https://$DOMAIN"
+        echo "  HTTP:  http://$DOMAIN (redirects to HTTPS)"
+    else
+        echo "  HTTPS: https://$PUBLIC_IP"
+        echo "  HTTP:  http://$PUBLIC_IP (redirects to HTTPS)"
+        echo ""
+        print_warning "Using self-signed certificate - browser will show security warning"
+    fi
+    echo ""
+    print_info "Direct access (behind nginx):"
+    echo "  http://localhost:4000"
+else
+    print_info "Your API is running on:"
+    echo "  http://localhost:4000"
+    echo "  http://$PUBLIC_IP:4000"
+fi
+
 echo ""
 print_info "Useful commands:"
-echo "  pm2 logs paperplane-api  - View logs"
-echo "  pm2 monit                - Monitor in real-time"
-echo "  pm2 restart paperplane-api - Restart server"
+echo "  pm2 logs paperplane-api        - View PM2 logs"
+echo "  pm2 monit                      - Monitor in real-time"
+echo "  pm2 restart paperplane-api     - Restart server"
+if [ "$SKIP_NGINX" = false ]; then
+    echo "  sudo systemctl status nginx    - Check Nginx status"
+    echo "  sudo systemctl reload nginx    - Reload Nginx config"
+    echo "  sudo nginx -t                  - Test Nginx config"
+fi
 echo ""
