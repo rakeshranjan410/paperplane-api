@@ -218,7 +218,26 @@ Expected response:
 
 ## Updating Your Application
 
-### Pull Latest Changes
+### Automated Deployment (Recommended)
+
+Use the included deployment script for a complete update:
+
+```bash
+cd ~/paperplane-api
+./deploy.sh
+```
+
+This script automatically:
+- Pulls latest changes from main
+- Reinstalls dependencies
+- Stops all PM2 processes
+- Restarts the server in production mode
+- Runs health checks
+- Saves PM2 configuration
+
+### Manual Update
+
+#### Pull Latest Changes
 ```bash
 cd ~/paperplane-api
 git pull origin main
@@ -226,7 +245,7 @@ npm install --production
 pm2 reload paperplane-api
 ```
 
-### Or with Zero-Downtime Deployment
+#### Or with Zero-Downtime Deployment
 ```bash
 cd ~/paperplane-api
 git pull origin main

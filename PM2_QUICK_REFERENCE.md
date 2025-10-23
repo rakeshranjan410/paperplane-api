@@ -90,7 +90,15 @@ pm2 resurrect
 
 ## Updating the Application
 
-### Standard Update
+### Automated Deployment (Recommended)
+```bash
+cd ~/paperplane-api
+./deploy.sh
+```
+
+This script pulls latest changes, reinstalls dependencies, and restarts PM2.
+
+### Manual Update
 ```bash
 cd ~/paperplane-api
 git pull origin main

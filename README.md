@@ -229,6 +229,11 @@ markdown-qa-api/
 ├── .env.example               # Environment variables template
 ├── .gitignore                 # Git ignore rules
 ├── package.json               # Dependencies and scripts
+├── ecosystem.config.js        # PM2 configuration
+├── deploy.sh                  # Automated deployment script
+├── setup-pm2.sh               # PM2 initial setup script
+├── EC2_DEPLOYMENT.md          # EC2 deployment guide
+├── PM2_QUICK_REFERENCE.md     # PM2 command reference
 └── README.md                  # This file
 ```
 
@@ -415,6 +420,14 @@ npm run pm2:start
 pm2 save
 pm2 startup
 ```
+
+**Automated Deployment:**
+```bash
+# Pull latest changes and restart server
+./deploy.sh
+```
+
+The `deploy.sh` script automatically pulls changes, reinstalls dependencies, and restarts PM2.
 
 ## 🔧 Environment Variables
 
