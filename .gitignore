@@ -6,11 +6,19 @@ package-lock.json
 .env
 
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# PM2
+.pm2
+.pm2/logs
 
 # OS
 .DS_Store

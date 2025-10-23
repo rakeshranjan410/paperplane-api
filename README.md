@@ -370,17 +370,49 @@ CMD ["npm", "start"]
 
 ### PM2 (Process Manager)
 
+**See [EC2_DEPLOYMENT.md](./EC2_DEPLOYMENT.md) for complete deployment guide.**
+
 ```bash
-# Install PM2
+# Install PM2 globally
 npm install -g pm2
 
-# Start with PM2
-pm2 start src/server.js --name markdown-qa-api
+# Start in production mode
+npm run pm2:start
+
+# Start in development mode
+npm run pm2:dev
+
+# View status
+npm run pm2:status
+
+# View logs
+npm run pm2:logs
+
+# Monitor in real-time
+npm run pm2:monit
+
+# Restart application
+npm run pm2:restart
+
+# Zero-downtime reload
+npm run pm2:reload
+
+# Stop application
+npm run pm2:stop
 
 # Save PM2 configuration
 pm2 save
 
 # Auto-start on reboot
+pm2 startup
+```
+
+**Quick Start on EC2:**
+```bash
+# After cloning repo and installing dependencies
+mkdir logs
+npm run pm2:start
+pm2 save
 pm2 startup
 ```
 
