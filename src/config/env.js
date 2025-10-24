@@ -27,7 +27,7 @@ export async function initializeConfig() {
       port: secrets.PORT || 4000,
       nodeEnv: secrets.NODE_ENV || 'development',
       hostEnv: secrets.HOST_ENV || 'local',
-      frontendUrl: secrets.FRONTEND_URL || 'http://localhost:5173',
+      frontendUrl: secrets.FRONTEND_URL,
       
       // AWS S3
       aws: {

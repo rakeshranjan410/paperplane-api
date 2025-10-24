@@ -66,9 +66,9 @@ function loadFromEnv() {
   
   // Determine frontend URL based on HOST_ENV
   const hostEnv = process.env.HOST_ENV || 'local';
-  const frontendUrl = hostEnv === 'production' 
-    ? (process.env.FRONTEND_URL_PROD || 'http://3.27.210.229:5173')
-    : (process.env.FRONTEND_URL_LOCAL || 'http://localhost:5173');
+  const frontendUrl = hostEnv === 'production'
+    ? (process.env.FRONTEND_URL_PROD || 'http://3.27.210.229:3000') // Default to 3000 for prod if not set
+    : (process.env.FRONTEND_URL_LOCAL || 'http://localhost:3000'); // Default to 3000 for local if not set
   
   console.log(`   HOST_ENV: ${hostEnv}`);
   console.log(`   Frontend URL: ${frontendUrl}`);
@@ -93,11 +93,6 @@ function loadFromEnv() {
     NODE_ENV: process.env.NODE_ENV || 'development',
     HOST_ENV: hostEnv,
     FRONTEND_URL: frontendUrl,
-    
-    // Cognito (optional)
-    COGNITO_USER_POOL_ID: process.env.COGNITO_USER_POOL_ID,
-    COGNITO_CLIENT_ID: process.env.COGNITO_CLIENT_ID,
-    COGNITO_REGION: process.env.COGNITO_REGION,
   };
 }
 
