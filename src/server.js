@@ -31,10 +31,16 @@ async function startServer() {
             callback(new Error('Not allowed by CORS'));
           }
         } else {
-          // In production, only allow the configured frontendUrl
-          if (origin === config.frontendUrl) {
+          // In production, allow the configured frontendUrl and any EC2 IP addresses
+          const allowedOrigins = [config.frontendUrl];
+          
+          // Also allow EC2 public IPs (format: http://XX.XX.XX.XX:port)
+          const isEC2IP = origin && /^http:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?$/.test(origin);
+          
+          if (!origin || allowedOrigins.includes(origin) || isEC2IP) {
             callback(null, true);
           } else {
+            console.warn(`CORS blocked origin: ${origin}`);
             callback(new Error('Not allowed by CORS'));
           }
         }
