@@ -13,9 +13,13 @@ npm run pm2:start
 # Development mode
 npm run pm2:dev
 
+# Debug mode
+npm run pm2:debug
+
 # Direct PM2 commands
 pm2 start ecosystem.config.cjs --env production
 pm2 start ecosystem.config.cjs --env development
+pm2 start ecosystem.config.cjs --env debug
 ```
 
 ### Viewing Status & Monitoring

@@ -55,6 +55,7 @@ function collectImageUrls(question) {
  * Upload question to S3 and MongoDB with rollback mechanism
  */
 export async function uploadQuestionToDB(question) {
+  console.log('uploadQuestionToDB: Starting upload process for question:', question.id);
   const uploadedS3Keys = [];
   const s3UrlMap = new Map(); // originalUrl -> s3Url
   let mongoId = undefined;
@@ -63,7 +64,7 @@ export async function uploadQuestionToDB(question) {
     // Check if question already exists
     const exists = await questionExists(question.id);
     if (exists) {
-      console.warn(`Question ${question.id} already exists in database`);
+      console.warn(`uploadQuestionToDB: Question ${question.id} already exists in database`);
       return {
         success: false,
         message: `Question ${question.id} already exists in database. Please delete it first or use a different question.`,
@@ -72,36 +73,56 @@ export async function uploadQuestionToDB(question) {
 
     // Step 1: Upload all images to S3
     const imageUrls = collectImageUrls(question);
+    if (imageUrls.length > 0) {
+      console.log(`uploadQuestionToDB: Found ${imageUrls.length} image(s) to upload`);
+    }
+    
+    const failedImages = [];
     
     if (imageUrls.length > 0) {
-      console.log(`Step 1: Uploading ${imageUrls.length} image(s) to S3...`);
+      console.log(`uploadQuestionToDB: Step 1: Uploading ${imageUrls.length} image(s) to S3...`);
       
       for (const imageUrl of imageUrls) {
         try {
+          console.log(`uploadQuestionToDB: Attempting to upload image: ${imageUrl}`);
           const s3Url = await uploadImageToS3(imageUrl);
           s3UrlMap.set(imageUrl, s3Url);
           uploadedS3Keys.push(extractS3Key(s3Url));
-          console.log(`✓ Image uploaded to S3: ${s3Url}`);
+          console.log(`uploadQuestionToDB: ✓ Image uploaded to S3: ${s3Url}`);
         } catch (error) {
-          console.warn(`Failed to upload image ${imageUrl}:`, error.message);
-          // Continue with other images
+          console.error(`uploadQuestionToDB: ✗ Failed to upload image ${imageUrl}:`, error.message);
+          failedImages.push({ url: imageUrl, error: error.message });
         }
       }
+      
+      // If any images failed, report it but continue (images are optional)
+      if (failedImages.length > 0) {
+        console.warn(`uploadQuestionToDB: ${failedImages.length} image(s) failed to upload:`, failedImages);
+      }
+    } else {
+      console.log('uploadQuestionToDB: No image URLs found for this question.');
     }
 
     // Step 2: Replace image URLs with S3 URLs in question object
     const questionWithS3Urls = replaceImageUrls(question, s3UrlMap);
 
     // Step 3: Save to MongoDB with updated S3 URLs
-    console.log('Step 2: Saving question to MongoDB...');
+    console.log('uploadQuestionToDB: Step 2: Saving question to MongoDB...');
     mongoId = await saveQuestionToMongoDB(questionWithS3Urls, s3UrlMap.get(question.imageUrl));
-    console.log('✓ Question saved to MongoDB with ID:', mongoId);
+    console.log('uploadQuestionToDB: ✓ Question saved to MongoDB with ID:', mongoId);
 
+    // Build success message with warnings if images failed
+    let message = 'Successfully uploaded to database!';
+    if (failedImages.length > 0) {
+      message += ` Warning: ${failedImages.length} image(s) failed to upload to S3. The question was saved with original image URLs.`;
+    }
+    
     return {
       success: true,
-      message: 'Successfully uploaded to database!',
+      message,
       s3Urls: Array.from(s3UrlMap.values()),
       mongoId,
+      failedImages: failedImages.length > 0 ? failedImages : undefined,
     };
 
   } catch (error) {

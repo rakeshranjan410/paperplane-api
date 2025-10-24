@@ -3,15 +3,47 @@ import CryptoJS from 'crypto-js';
 import fetch from 'node-fetch';
 import { config } from '../config/env.js';
 
-const BUCKET_NAME = config.aws.s3BucketName;
+// Lazy initialization to ensure config is loaded first
+let s3Client = null;
+let BUCKET_NAME = null;
 
-const s3Client = new S3Client({
-  region: config.aws.region,
-  credentials: {
-    accessKeyId: config.aws.accessKeyId,
-    secretAccessKey: config.aws.secretAccessKey,
-  },
-});
+/**
+ * Initialize S3 client with current config
+ * This is called lazily to ensure config is loaded first
+ */
+function getS3Client() {
+  if (!s3Client) {
+    BUCKET_NAME = config.aws.s3BucketName;
+    
+    if (!BUCKET_NAME) {
+      throw new Error('S3_BUCKET_NAME not configured. Make sure configuration is initialized.');
+    }
+    
+    s3Client = new S3Client({
+      region: config.aws.region,
+      credentials: {
+        accessKeyId: config.aws.accessKeyId,
+        secretAccessKey: config.aws.secretAccessKey,
+      },
+    });
+    
+    console.log('S3 client initialized with bucket:', BUCKET_NAME);
+  }
+  return s3Client;
+}
+
+/**
+ * Get the configured bucket name
+ */
+function getBucketName() {
+  if (!BUCKET_NAME) {
+    BUCKET_NAME = config.aws.s3BucketName;
+    if (!BUCKET_NAME) {
+      throw new Error('S3_BUCKET_NAME not configured. Make sure configuration is initialized.');
+    }
+  }
+  return BUCKET_NAME;
+}
 
 /**
  * Generate a unique hash name for an image
@@ -45,32 +77,41 @@ async function downloadImage(imageUrl) {
  * Upload image to S3 bucket
  */
 export async function uploadImageToS3(imageUrl) {
+  console.log('uploadImageToS3: Starting image upload for URL:', imageUrl);
   if (!imageUrl) {
+    console.error('uploadImageToS3: No image URL provided');
     throw new Error('No image URL provided');
   }
 
-  console.log('Downloading image from:', imageUrl);
-  const imageBuffer = await downloadImage(imageUrl);
-  
-  const key = generateImageHash(imageUrl);
-  
-  console.log('Uploading to S3 with key:', key);
-  
-  const command = new PutObjectCommand({
-    Bucket: BUCKET_NAME,
-    Key: key,
-    Body: imageBuffer,
-    ContentType: 'image/jpeg',
-    ACL: 'public-read', // Make images publicly accessible
-  });
+  try {
+    console.log('uploadImageToS3: Downloading image from:', imageUrl);
+    const imageBuffer = await downloadImage(imageUrl);
+    
+    const key = generateImageHash(imageUrl);
+    const bucketName = getBucketName();
+    const client = getS3Client();
+    
+    console.log('uploadImageToS3: Uploading to S3 with key:', key);
+    
+    const command = new PutObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+      Body: imageBuffer,
+      ContentType: 'image/jpeg',
+      // Note: ACL removed - bucket should have public read policy instead
+    });
 
-  await s3Client.send(command);
-  
-  // Return the S3 URL
-  const s3Url = `https://${BUCKET_NAME}.s3.${config.aws.region}.amazonaws.com/${key}`;
-  console.log('Image uploaded successfully to:', s3Url);
-  
-  return s3Url;
+    await client.send(command);
+    
+    // Return the S3 URL
+    const s3Url = `https://${bucketName}.s3.${config.aws.region}.amazonaws.com/${key}`;
+    console.log('uploadImageToS3: Image uploaded successfully to:', s3Url);
+    
+    return s3Url;
+  } catch (error) {
+    console.error(`uploadImageToS3: Error uploading image ${imageUrl}:`, error);
+    throw error; // Re-throw the error for upstream handling
+  }
 }
 
 /**
@@ -83,12 +124,15 @@ export async function deleteImageFromS3(s3Key) {
 
   console.log('Deleting image from S3:', s3Key);
   
+  const bucketName = getBucketName();
+  const client = getS3Client();
+  
   const command = new DeleteObjectCommand({
-    Bucket: BUCKET_NAME,
+    Bucket: bucketName,
     Key: s3Key,
   });
 
-  await s3Client.send(command);
+  await client.send(command);
   console.log('Image deleted successfully from S3');
 }
 

@@ -64,6 +64,14 @@ module.exports = {
       PORT: 4000
     },
     
+    // Environment variables for debug
+    env_debug: {
+      NODE_ENV: 'development',
+      HOST_ENV: 'local',
+      PORT: 4000,
+      NODE_ENV_DEBUG: 'true'
+    },
+    
     // Logging configuration
     error_file: './logs/pm2-error.log',
     out_file: './logs/pm2-out.log',

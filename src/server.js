@@ -22,7 +22,23 @@ async function startServer() {
 
     // CORS configuration
     const corsOptions = {
-      origin: config.frontendUrl,
+      origin: (origin, callback) => {
+        if (config.hostEnv === 'local') {
+          // Allow any localhost port in development
+          if (!origin || /^http:\/\/localhost:\d+$/.test(origin)) {
+            callback(null, true);
+          } else {
+            callback(new Error('Not allowed by CORS'));
+          }
+        } else {
+          // In production, only allow the configured frontendUrl
+          if (origin === config.frontendUrl) {
+            callback(null, true);
+          } else {
+            callback(new Error('Not allowed by CORS'));
+          }
+        }
+      },
       credentials: true,
       optionsSuccessStatus: 200,
     };
@@ -70,7 +86,7 @@ async function startServer() {
 ║   Environment: ${config.nodeEnv}                      ║
 ║   Host Environment: ${config.hostEnv}                 ║
 ║   Secrets Source: ${config.secretsSource}             ║
-║   Frontend URL: ${config.frontendUrl}                 ║
+║   Frontend URL(s) Allowed: ${config.hostEnv === 'local' ? 'http://localhost:*' : config.frontendUrl}                 ║
 ║                                                        ║
 ║   API Endpoints:                                       ║
 ║   - POST /api/questions/upload                         ║
