@@ -317,6 +317,45 @@ router.delete('/:id', async (req, res) => {
 });
 
 /**
+ * POST /api/questions/delete-batch
+ * Delete multiple questions by their MongoDB _ids
+ */
+router.post('/delete-batch', async (req, res) => {
+  try {
+    const { questionIds } = req.body;
+    
+    if (!questionIds || !Array.isArray(questionIds)) {
+      return res.status(400).json({
+        success: false,
+        message: 'questionIds array is required',
+      });
+    }
+
+    if (questionIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'questionIds array cannot be empty',
+      });
+    }
+
+    const { deleteMultipleQuestionsFromMongoDB } = await import('../services/mongodb.js');
+    const result = await deleteMultipleQuestionsFromMongoDB(questionIds);
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully deleted ${result.deletedCount} question(s)`,
+      deletedCount: result.deletedCount,
+    });
+  } catch (error) {
+    console.error('Error deleting questions:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to delete questions',
+    });
+  }
+});
+
+/**
  * GET /api/questions/:id
  * Get a specific question by ID
  * NOTE: This must come AFTER specific routes like /health and /image-proxy

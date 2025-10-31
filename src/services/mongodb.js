@@ -111,6 +111,28 @@ export async function deleteQuestionFromMongoDB(documentId) {
 }
 
 /**
+ * Delete multiple questions from MongoDB
+ */
+export async function deleteMultipleQuestionsFromMongoDB(documentIds) {
+  if (!documentIds || documentIds.length === 0) {
+    return { deletedCount: 0 };
+  }
+
+  console.log('Deleting multiple questions from MongoDB:', documentIds);
+  
+  const collection = await getQuestionsCollection();
+  
+  // Convert all IDs to ObjectId
+  const objectIds = documentIds.map(id => new ObjectId(id));
+  
+  const result = await collection.deleteMany({ _id: { $in: objectIds } });
+  
+  console.log(`Deleted ${result.deletedCount} questions from MongoDB`);
+  
+  return result;
+}
+
+/**
  * Check if question already exists in MongoDB
  */
 export async function questionExists(questionId) {
