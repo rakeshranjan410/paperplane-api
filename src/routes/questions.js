@@ -154,11 +154,17 @@ router.get('/', async (req, res) => {
 
 /**
  * GET /api/questions/filter-options
- * Get unique values for filter dropdowns
+ * Get unique values for filter dropdowns with cascading logic
+ * Query params: subject, section (for cascading filters)
  */
 router.get('/filter-options', async (req, res) => {
   try {
-    const options = await getFilterOptions();
+    const { subject, section } = req.query;
+    const filters = {};
+    if (subject) filters.subject = subject;
+    if (section) filters.section = section;
+    
+    const options = await getFilterOptions(filters);
     res.status(200).json({
       success: true,
       options,

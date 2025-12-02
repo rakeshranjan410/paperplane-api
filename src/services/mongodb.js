@@ -180,15 +180,33 @@ export async function getAllQuestions(filters = {}) {
 }
 
 /**
- * Get unique filter values for dropdowns
+ * Get unique filter values for dropdowns with cascading logic
+ * - subjects: always returns all subjects
+ * - sections: filtered by subject if provided
+ * - chapters: filtered by subject and section if provided
  */
-export async function getFilterOptions() {
+export async function getFilterOptions(filters = {}) {
   const collection = await getQuestionsCollection();
   
-  // Get distinct values for each filter field
+  // Subjects are always unfiltered
   const subjects = await collection.distinct('subject');
-  const chapters = await collection.distinct('chapter');
-  const sections = await collection.distinct('section');
+  
+  // Sections filtered by subject if provided
+  const sectionQuery = {};
+  if (filters.subject) {
+    sectionQuery.subject = filters.subject;
+  }
+  const sections = await collection.distinct('section', sectionQuery);
+  
+  // Chapters filtered by subject and section if provided
+  const chapterQuery = {};
+  if (filters.subject) {
+    chapterQuery.subject = filters.subject;
+  }
+  if (filters.section) {
+    chapterQuery.section = filters.section;
+  }
+  const chapters = await collection.distinct('chapter', chapterQuery);
   
   return {
     subjects: subjects.filter(s => s && s !== 'Unknown').sort(),
